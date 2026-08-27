@@ -1,0 +1,35 @@
+[Unit]
+Description=Bot de Discord para Monitoria de Calculo 3
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=monitoria
+Group=monitoria
+WorkingDirectory=/opt/monitoria-bot
+
+# Carrega variaveis confidenciais (ex: DISCORD_TOKEN) de arquivo restrito (chmod 600)
+EnvironmentFile=/etc/monitoria-bot/bot.env
+
+# Execucao a partir do virtualenv dedicado com caminhos absolutos
+ExecStart=/opt/monitoria-bot/.venv/bin/python -m monitoria_bot
+
+# Politica de reinicio automatico resiliente
+Restart=always
+RestartSec=10
+
+# Hardening e isolamento de seguranca no Linux
+ProtectSystem=strict
+ReadWritePaths=/opt/monitoria-bot/data /opt/monitoria-bot/backups
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+# Logs direcionados ao stdout/stderr coletados pelo journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=monitoria-bot
+
+[Install]
+WantedBy=multi-user.target
