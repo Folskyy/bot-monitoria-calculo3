@@ -71,10 +71,11 @@ async def test_registration_modal_success(test_db: Database, mock_config: Config
         monitor_role_id=sample_settings.monitor_role_id,
     )
 
-    modal = RegistrationModal(test_db, mock_config, sample_settings)
+    classes = await test_db.get_classes(sample_settings.guild_id)
+    modal = RegistrationModal(test_db, mock_config, sample_settings, classes=classes)
     modal.full_name_input._value = "Mariana Costa"
     modal.ra_input._value = "0045678"
-    modal.class_name_input._value = "Turma C"
+    modal.class_select._values = ["Engenharia de Computação"]
 
     interaction = MagicMock(spec=discord.Interaction)
     guild = MagicMock(spec=discord.Guild)
@@ -101,13 +102,56 @@ async def test_registration_modal_success(test_db: Database, mock_config: Config
     assert student is not None
     assert student.status == "active"
     assert student.ra == "0045678"
+    assert student.class_name == "Engenharia de Computação"
+
+
+async def test_registration_modal_custom_class_creates_in_db(
+    test_db: Database, mock_config: Config, sample_settings: GuildSettings
+):
+    await test_db.upsert_guild_settings(
+        guild_id=sample_settings.guild_id,
+        welcome_channel_id=sample_settings.welcome_channel_id,
+        doubts_channel_id=sample_settings.doubts_channel_id,
+        queue_channel_id=sample_settings.queue_channel_id,
+        student_role_id=sample_settings.student_role_id,
+        monitor_role_id=sample_settings.monitor_role_id,
+    )
+
+    classes = await test_db.get_classes(sample_settings.guild_id)
+    modal = RegistrationModal(test_db, mock_config, sample_settings, classes=classes)
+    modal.full_name_input._value = "Aluno Nova Turma"
+    modal.ra_input._value = "009988"
+    modal.class_select._values = ["Outro"]
+    modal.custom_class_input._value = "Engenharia Aeroespacial"
+
+    interaction = MagicMock(spec=discord.Interaction)
+    guild = MagicMock(spec=discord.Guild)
+    guild.id = 111
+    member = MagicMock(spec=discord.Member)
+    member.id = 77711
+    interaction.guild = guild
+    interaction.user = member
+    interaction.response = AsyncMock()
+
+    role = MagicMock(spec=discord.Role)
+    role.name = "Aluno"
+    guild.get_role.return_value = role
+    member.add_roles = AsyncMock()
+
+    await modal.on_submit(interaction)
+
+    student = await test_db.get_student("111", "77711")
+    assert student is not None
+    assert student.class_name == "Engenharia Aeroespacial"
+
+    db_classes = await test_db.get_classes("111")
+    assert any(c.name == "Engenharia Aeroespacial" for c in db_classes)
 
 
 async def test_registration_modal_invalid_ra(test_db: Database, mock_config: Config, sample_settings: GuildSettings):
     modal = RegistrationModal(test_db, mock_config, sample_settings)
     modal.full_name_input._value = "Mariana Costa"
     modal.ra_input._value = "RA com espacos e caracteres invalidos @#!"
-    modal.class_name_input._value = ""
 
     interaction = MagicMock(spec=discord.Interaction)
     guild = MagicMock(spec=discord.Guild)
@@ -131,13 +175,11 @@ async def test_registration_modal_duplicate_ra_by_other_user(
         guild_id="111", welcome_channel_id="2", doubts_channel_id="3",
         queue_channel_id="4", student_role_id="5", monitor_role_id="6"
     )
-    # user 100 already registered RA 12345
     await test_db.create_pending_student("111", "100", "Aluno Existente", "12345")
 
     modal = RegistrationModal(test_db, mock_config, sample_settings)
     modal.full_name_input._value = "Outro Aluno"
     modal.ra_input._value = "12345"
-    modal.class_name_input._value = ""
 
     interaction = MagicMock(spec=discord.Interaction)
     guild = MagicMock(spec=discord.Guild)
@@ -165,7 +207,6 @@ async def test_registration_modal_discord_role_fail_preserves_pending(
     modal = RegistrationModal(test_db, mock_config, sample_settings)
     modal.full_name_input._value = "Aluno Com Falha Discord"
     modal.ra_input._value = "998877"
-    modal.class_name_input._value = ""
 
     interaction = MagicMock(spec=discord.Interaction)
     guild = MagicMock(spec=discord.Guild)
@@ -178,7 +219,6 @@ async def test_registration_modal_discord_role_fail_preserves_pending(
 
     role = MagicMock(spec=discord.Role)
     guild.get_role.return_value = role
-    # Simula erro de permissão do Discord ao atribuir cargo
     member.add_roles = AsyncMock(side_effect=discord.Forbidden(MagicMock(), "Sem permissão"))
 
     await modal.on_submit(interaction)
@@ -206,3 +246,4 @@ async def test_registration_view_button_unregistered(test_db: Database, mock_con
     await button.callback(interaction)
 
     interaction.response.send_modal.assert_awaited_once()
+

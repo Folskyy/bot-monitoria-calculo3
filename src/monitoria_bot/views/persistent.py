@@ -121,9 +121,11 @@ class RegistrationView(discord.ui.View):
 
         # Caso 1: Usuário ainda não cadastrado -> abre o modal
         if not student:
-            modal = RegistrationModal(self.db, self.config, settings)
+            classes = await self.db.get_classes(guild_id)
+            modal = RegistrationModal(self.db, self.config, settings, classes=classes)
             await interaction.response.send_modal(modal)
             return
+
 
         student_role = guild.get_role(int(settings.student_role_id))
 

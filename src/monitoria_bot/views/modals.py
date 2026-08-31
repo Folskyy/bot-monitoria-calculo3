@@ -7,7 +7,7 @@ import sqlite3
 import discord
 
 from monitoria_bot.config import Config
-from monitoria_bot.database import Database, GuildSettings, Student
+from monitoria_bot.database import ClassOption, Database, GuildSettings, Student
 
 logger = logging.getLogger(__name__)
 
@@ -15,34 +15,56 @@ logger = logging.getLogger(__name__)
 class RegistrationModal(discord.ui.Modal, title="Cadastro - Monitoria de Cálculo 3"):
     """Modal para coleta segura e privada dos dados cadastrais do aluno."""
 
-    full_name_input = discord.ui.TextInput(
-        label="Nome Completo",
-        placeholder="Ex: Ana Clara dos Santos",
-        required=True,
-        min_length=1,
-        max_length=100,
-    )
-
-    ra_input = discord.ui.TextInput(
-        label="RA (Registro Acadêmico)",
-        placeholder="Ex: 0012345 (conforme fornecido pela instituição)",
-        required=True,
-        min_length=1,
-        max_length=32,
-    )
-
-    class_name_input = discord.ui.TextInput(
-        label="Turma (Opcional)",
-        placeholder="Ex: Turma A, Noturno, etc.",
-        required=False,
-        max_length=80,
-    )
-
-    def __init__(self, db: Database, config: Config, settings: GuildSettings) -> None:
+    def __init__(
+        self,
+        db: Database,
+        config: Config,
+        settings: GuildSettings,
+        classes: list[ClassOption] | None = None,
+    ) -> None:
         super().__init__()
         self.db = db
         self.config = config
         self.settings = settings
+        self.classes = classes or []
+
+        self.full_name_input = discord.ui.TextInput(
+            label="Nome Completo",
+            placeholder="Ex: Ana Clara dos Santos",
+            required=True,
+            min_length=1,
+            max_length=100,
+        )
+        self.add_item(self.full_name_input)
+
+        self.ra_input = discord.ui.TextInput(
+            label="RA (Registro Acadêmico)",
+            placeholder="Ex: 0012345 (conforme fornecido pela instituição)",
+            required=True,
+            min_length=1,
+            max_length=32,
+        )
+        self.add_item(self.ra_input)
+
+        options = [discord.SelectOption(label=c.name, value=c.name) for c in self.classes]
+        if not any(opt.value.lower() == "outro" for opt in options):
+            options.append(discord.SelectOption(label="Outro", value="Outro"))
+
+        self.class_select = discord.ui.Select(
+            placeholder="Selecione a sua turma/curso",
+            options=options,
+            min_values=1,
+            max_values=1,
+        )
+        self.add_item(self.class_select)
+
+        self.custom_class_input = discord.ui.TextInput(
+            label="Se selecionou 'Outro', especifique a turma",
+            placeholder="Ex: Engenharia Mecânica",
+            required=False,
+            max_length=80,
+        )
+        self.add_item(self.custom_class_input)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
@@ -59,7 +81,6 @@ class RegistrationModal(discord.ui.Modal, title="Cadastro - Monitoria de Cálcul
 
         full_name = self.full_name_input.value.strip()
         ra = self.ra_input.value.strip()
-        class_name = self.class_name_input.value.strip() if self.class_name_input.value else None
 
         # Validação do formato do RA
         if not self.config.ra_regex.match(ra):
@@ -79,6 +100,19 @@ class RegistrationModal(discord.ui.Modal, title="Cadastro - Monitoria de Cálcul
                 ephemeral=True,
             )
             return
+
+        selected_option = self.class_select.values[0] if self.class_select.values else "Outro"
+        custom_val = self.custom_class_input.value.strip() if self.custom_class_input.value else None
+
+        if selected_option.lower() == "outro":
+            if custom_val:
+                class_name = custom_val
+                await self.db.add_class(guild_id, class_name)
+            else:
+                class_name = "Outro"
+                await self.db.add_class(guild_id, class_name)
+        else:
+            class_name = selected_option
 
         # Gravação inicial com status pending_role
         try:
@@ -129,12 +163,20 @@ class RegistrationModal(discord.ui.Modal, title="Cadastro - Monitoria de Cálcul
 class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
     """Modal administrativo/monitor para ajuste de dados de um aluno."""
 
-    def __init__(self, db: Database, config: Config, target_member: discord.Member, current_student: Student) -> None:
+    def __init__(
+        self,
+        db: Database,
+        config: Config,
+        target_member: discord.Member,
+        current_student: Student,
+        classes: list[ClassOption] | None = None,
+    ) -> None:
         super().__init__()
         self.db = db
         self.config = config
         self.target_member = target_member
         self.current_student = current_student
+        self.classes = classes or []
 
         self.full_name_input = discord.ui.TextInput(
             label="Nome Completo",
@@ -154,13 +196,41 @@ class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
         )
         self.add_item(self.ra_input)
 
-        self.class_name_input = discord.ui.TextInput(
-            label="Turma (Opcional)",
-            default=current_student.class_name or "",
+        current_class = current_student.class_name or ""
+        options = [discord.SelectOption(label=c.name, value=c.name) for c in self.classes]
+        if not any(opt.value.lower() == "outro" for opt in options):
+            options.append(discord.SelectOption(label="Outro", value="Outro"))
+
+        found_matching = False
+        for opt in options:
+            if opt.value == current_class:
+                opt.default = True
+                found_matching = True
+                break
+
+        custom_default = ""
+        if not found_matching and current_class:
+            for opt in options:
+                if opt.value.lower() == "outro":
+                    opt.default = True
+                    break
+            custom_default = current_class
+
+        self.class_select = discord.ui.Select(
+            placeholder="Selecione a sua turma/curso",
+            options=options,
+            min_values=1,
+            max_values=1,
+        )
+        self.add_item(self.class_select)
+
+        self.custom_class_input = discord.ui.TextInput(
+            label="Se selecionou 'Outro', especifique a turma",
+            default=custom_default,
             required=False,
             max_length=80,
         )
-        self.add_item(self.class_name_input)
+        self.add_item(self.custom_class_input)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         guild_id = str(self.target_member.guild.id)
@@ -168,7 +238,6 @@ class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
 
         full_name = self.full_name_input.value.strip()
         ra = self.ra_input.value.strip()
-        class_name = self.class_name_input.value.strip() if self.class_name_input.value else None
 
         if not self.config.ra_regex.match(ra):
             await interaction.response.send_message(
@@ -187,6 +256,19 @@ class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
                 )
                 return
 
+        selected_option = self.class_select.values[0] if self.class_select.values else "Outro"
+        custom_val = self.custom_class_input.value.strip() if self.custom_class_input.value else None
+
+        if selected_option.lower() == "outro":
+            if custom_val:
+                class_name = custom_val
+                await self.db.add_class(guild_id, class_name)
+            else:
+                class_name = "Outro"
+                await self.db.add_class(guild_id, class_name)
+        else:
+            class_name = selected_option
+
         try:
             await self.db.update_student_profile(guild_id, user_id, full_name, ra, class_name)
             await interaction.response.send_message(
@@ -199,3 +281,5 @@ class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
                 "❌ Ocorreu um erro ao atualizar os dados no banco.",
                 ephemeral=True,
             )
+
+
