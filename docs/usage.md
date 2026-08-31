@@ -24,7 +24,7 @@ Este guia descreve os fluxos de trabalho para **Alunos**, **Monitores** e **Admi
 | `/material remover`  | Monitores e Administradores | `id` (inteiro) | `/material remover id:5` | Remove o material e suas tags associadas do acervo. |
 | `/material buscar`   | Alunos Cadastrados / Monitores | `[termo]`, `[tag]` | `/material buscar termo:Stokes tag:teoria` | Mensagem efêmera com materiais correspondentes aos critérios de busca. |
 | `/aluno-editar`      | Monitores e Administradores | `aluno` (membro) | `/aluno-editar aluno:@João` | Abre modal privado para retificar Nome, RA ou Turma do aluno indicado. |
-| `/horarios-definir`  | Monitores e Administradores | `texto` | `/horarios-definir texto:Terças e Quintas 14h-16h` | Atualiza o texto exibido em `/horarios`. |
+| `/horarios-definir`  | Monitores e Administradores | `[texto]` | `/horarios-definir` ou `/horarios-definir texto:...` | Atualiza o texto em `/horarios`. Se o argumento for omitido, abre um formulário interativo (Modal) com campo multi-linha para digitação livre. Aceita `\n` e Markdown. |
 | `/configurar`        | Administradores | canais, cargos e opções | `/configurar canal_boas_vindas:#entrada ...` | Valida e salva os canais e cargos oficiais da monitoria. |
 | `/boas-vindas`       | Administradores | Nenhum | `/boas-vindas` | Publica ou edita a mensagem fixa oficial no canal de boas-vindas com botão de cadastro. |
 | `/ajuda`             | Todos | Nenhum | `/ajuda` | Exibe a central de ajuda com os comandos organizados por perfil. |
