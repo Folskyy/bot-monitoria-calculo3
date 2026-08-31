@@ -15,20 +15,20 @@ logger = logging.getLogger(__name__)
 def build_welcome_embed(settings: GuildSettings) -> discord.Embed:
     """Gera o Embed padrão da mensagem fixa de boas-vindas e instruções da monitoria."""
     embed = discord.Embed(
-        title="📐 Bem-vindo(a) à Monitoria de Cálculo 3!",
+        title="📐 **Bem-vindo(a) à Monitoria de Cálculo 3!**",
         description=(
-            "Este servidor é o canal oficial para apoio e atendimento de dúvidas de Cálculo 3.\n"
+            "Este servidor é o canal oficial para apoio e atendimento de dúvidas de Cálculo 3.\n\n"
             "Consulte os dias e horários de atendimento com o comando `/horarios`.\n\n"
-            "Para ter acesso completo aos canais de dúvidas e fila, **você deve se cadastrar** "
+            "Para ter acesso completo aos canais de dúvidas e demais recursos do servidor, **você deve se cadastrar** "
             "clicando no botão abaixo."
         ),
         color=discord.Color.blue(),
     )
 
     embed.add_field(
-        name="📝 Como se Cadastrar",
+        name="📝 **Como se Cadastrar**",
         value=(
-            "Clique no botão **Realizar cadastro** abaixo ou use o comando `/cadastro`. "
+            "Clique no botão **Realizar cadastro** abaixo ou use o comando `/cadastro`.\n\n"
             "Um formulário privado solicitará seu Nome Completo, RA e Turma (opcional). "
             "Ao concluir, o cargo de **Aluno** será concedido automaticamente."
         ),
@@ -36,18 +36,23 @@ def build_welcome_embed(settings: GuildSettings) -> discord.Embed:
     )
 
     embed.add_field(
-        name="💡 Como Abrir Dúvidas e Usar a Fila",
+        name="💡 **Como Tirar Dúvidas**",
         value=(
-            "• **Dúvidas em canais/threads:** use `/duvida criar` informando assunto, título, descrição e opcionalmente uma imagem.\n"
-            "• **Fila de atendimento individual:** use `/fila entrar assunto` para aguardar atendimento síncrono pelo monitor."
+            "Você pode pedir ajuda da forma que for mais confortável:\n\n"
+            "• Envie sua dúvida diretamente no canal de dúvidas;\n"
+            "• Envie uma mensagem privada (DM) para o monitor;\n"
+            "• Use `/duvida criar` para organizar a pergunta em uma thread, informando assunto, título, descrição e, opcionalmente, uma imagem.\n\n"
+            "Se quiser atendimento individual em tempo real, também existe a **fila de atendimento**.\n\n"
+            "A fila é **opcional** e serve principalmente para avisar ao monitor que você está aguardando atendimento. Para entrar, use `/fila entrar assunto`.\n\n"
+            "Você não precisa usar a fila para fazer perguntas."
         ),
         inline=False,
     )
 
     embed.add_field(
-        name="📌 Boas Práticas ao Enviar Dúvidas",
+        name="📌 **Boas Práticas ao Enviar Dúvidas**",
         value=(
-            "Para um atendimento mais ágil, sempre inclua:\n"
+            "Para um atendimento mais ágil, sempre que possível inclua:\n\n"
             "1. **Enunciado completo** da questão;\n"
             "2. Sua **tentativa de resolução** (foto ou rascunho);\n"
             "3. O **ponto exato da dificuldade** onde você travou."
@@ -56,21 +61,21 @@ def build_welcome_embed(settings: GuildSettings) -> discord.Embed:
     )
 
     embed.add_field(
-        name="🤝 Regras Curtas de Convivência",
+        name="🤝 **Regras Curtas de Convivência**",
         value=(
             "• Mantenha o respeito com colegas e monitores.\n"
-            "• As dúvidas e threads são públicas para todos os alunos da turma aprenderem juntos.\n"
+            "• As dúvidas e threads são públicas para que outros alunos também possam acompanhar e aprender.\n"
             "• Não envie dados pessoais no chat público."
         ),
         inline=False,
     )
 
     embed.add_field(
-        name="⚠️ Avisos Importantes e Privacidade",
+        name="⚠️ **Avisos Importantes e Privacidade**",
         value=(
-            "• **Autodeclaração:** O cadastro aqui realizado é autodeclarado e não comprova matrícula institucional formal.\n"
-            "• **Privacidade do RA:** Seu RA é coletado estritamente para controle de presença e identificação acadêmica pelos monitores e professores responsáveis, com acesso restrito. O RA nunca é exposto em threads públicas ou na fila.\n"
-            "• **Correção e Exclusão:** Para retificar ou solicitar a exclusão de seus dados cadastrais, procure um monitor ou professor responsável."
+            "• **Autodeclaração:** o cadastro realizado no servidor é autodeclarado e não comprova matrícula institucional formal.\n"
+            "• **Privacidade do RA:** seu RA é coletado exclusivamente para controle de presença e identificação acadêmica pelos monitores e professores responsáveis, com acesso restrito. O RA não é exibido em threads públicas ou na fila.\n"
+            "• **Correção e Exclusão:** para corrigir ou solicitar a exclusão de seus dados cadastrados, procure um monitor ou professor responsável."
         ),
         inline=False,
     )
