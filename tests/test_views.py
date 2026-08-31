@@ -75,7 +75,7 @@ async def test_registration_modal_success(test_db: Database, mock_config: Config
     modal = RegistrationModal(test_db, mock_config, sample_settings, classes=classes)
     modal.full_name_input._value = "Mariana Costa"
     modal.ra_input._value = "0045678"
-    modal.class_select._values = ["Engenharia de Computação"]
+    modal.class_name_input._value = "Engenharia de Computação"
 
     interaction = MagicMock(spec=discord.Interaction)
     guild = MagicMock(spec=discord.Guild)
@@ -121,8 +121,7 @@ async def test_registration_modal_custom_class_creates_in_db(
     modal = RegistrationModal(test_db, mock_config, sample_settings, classes=classes)
     modal.full_name_input._value = "Aluno Nova Turma"
     modal.ra_input._value = "009988"
-    modal.class_select._values = ["Outro"]
-    modal.custom_class_input._value = "Engenharia Aeroespacial"
+    modal.class_name_input._value = "Engenharia Aeroespacial"
 
     interaction = MagicMock(spec=discord.Interaction)
     guild = MagicMock(spec=discord.Guild)

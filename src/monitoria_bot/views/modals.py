@@ -46,25 +46,13 @@ class RegistrationModal(discord.ui.Modal, title="Cadastro - Monitoria de Cálcul
         )
         self.add_item(self.ra_input)
 
-        options = [discord.SelectOption(label=c.name, value=c.name) for c in self.classes]
-        if not any(opt.value.lower() == "outro" for opt in options):
-            options.append(discord.SelectOption(label="Outro", value="Outro"))
-
-        self.class_select = discord.ui.Select(
-            placeholder="Selecione a sua turma/curso",
-            options=options,
-            min_values=1,
-            max_values=1,
-        )
-        self.add_item(self.class_select)
-
-        self.custom_class_input = discord.ui.TextInput(
-            label="Se selecionou 'Outro', especifique a turma",
-            placeholder="Ex: Engenharia Mecânica",
+        self.class_name_input = discord.ui.TextInput(
+            label="Turma/Curso",
+            placeholder="Ex: Engenharia de Computação",
             required=False,
             max_length=80,
         )
-        self.add_item(self.custom_class_input)
+        self.add_item(self.class_name_input)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
@@ -101,18 +89,9 @@ class RegistrationModal(discord.ui.Modal, title="Cadastro - Monitoria de Cálcul
             )
             return
 
-        selected_option = self.class_select.values[0] if self.class_select.values else "Outro"
-        custom_val = self.custom_class_input.value.strip() if self.custom_class_input.value else None
-
-        if selected_option.lower() == "outro":
-            if custom_val:
-                class_name = custom_val
-                await self.db.add_class(guild_id, class_name)
-            else:
-                class_name = "Outro"
-                await self.db.add_class(guild_id, class_name)
-        else:
-            class_name = selected_option
+        class_name = self.class_name_input.value.strip() if self.class_name_input.value else None
+        if class_name:
+            await self.db.add_class(guild_id, class_name)
 
         # Gravação inicial com status pending_role
         try:
@@ -196,41 +175,14 @@ class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
         )
         self.add_item(self.ra_input)
 
-        current_class = current_student.class_name or ""
-        options = [discord.SelectOption(label=c.name, value=c.name) for c in self.classes]
-        if not any(opt.value.lower() == "outro" for opt in options):
-            options.append(discord.SelectOption(label="Outro", value="Outro"))
-
-        found_matching = False
-        for opt in options:
-            if opt.value == current_class:
-                opt.default = True
-                found_matching = True
-                break
-
-        custom_default = ""
-        if not found_matching and current_class:
-            for opt in options:
-                if opt.value.lower() == "outro":
-                    opt.default = True
-                    break
-            custom_default = current_class
-
-        self.class_select = discord.ui.Select(
-            placeholder="Selecione a sua turma/curso",
-            options=options,
-            min_values=1,
-            max_values=1,
-        )
-        self.add_item(self.class_select)
-
-        self.custom_class_input = discord.ui.TextInput(
-            label="Se selecionou 'Outro', especifique a turma",
-            default=custom_default,
+        self.class_name_input = discord.ui.TextInput(
+            label="Turma/Curso",
+            default=current_student.class_name or "",
+            placeholder="Ex: Engenharia de Computação",
             required=False,
             max_length=80,
         )
-        self.add_item(self.custom_class_input)
+        self.add_item(self.class_name_input)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         guild_id = str(self.target_member.guild.id)
@@ -256,18 +208,9 @@ class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
                 )
                 return
 
-        selected_option = self.class_select.values[0] if self.class_select.values else "Outro"
-        custom_val = self.custom_class_input.value.strip() if self.custom_class_input.value else None
-
-        if selected_option.lower() == "outro":
-            if custom_val:
-                class_name = custom_val
-                await self.db.add_class(guild_id, class_name)
-            else:
-                class_name = "Outro"
-                await self.db.add_class(guild_id, class_name)
-        else:
-            class_name = selected_option
+        class_name = self.class_name_input.value.strip() if self.class_name_input.value else None
+        if class_name:
+            await self.db.add_class(guild_id, class_name)
 
         try:
             await self.db.update_student_profile(guild_id, user_id, full_name, ra, class_name)
@@ -281,5 +224,6 @@ class EditStudentModal(discord.ui.Modal, title="Editar Cadastro de Aluno"):
                 "❌ Ocorreu um erro ao atualizar os dados no banco.",
                 ephemeral=True,
             )
+
 
 
