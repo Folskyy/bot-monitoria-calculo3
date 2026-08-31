@@ -14,10 +14,15 @@ def main() -> None:
     """Carrega as configurações, inicializa o logger e executa o bot."""
     config = load_config(require_token=True)
 
+    handlers: list[logging.Handler] = [logging.StreamHandler(sys.stdout)]
+    if config.log_file:
+        config.log_file.parent.mkdir(parents=True, exist_ok=True)
+        handlers.append(logging.FileHandler(config.log_file, encoding="utf-8"))
+
     logging.basicConfig(
         level=getattr(logging, config.log_level, logging.INFO),
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
+        handlers=handlers,
     )
     logger = logging.getLogger("monitoria_bot")
     logger.info("Iniciando Bot de Monitoria de Cálculo 3...")
