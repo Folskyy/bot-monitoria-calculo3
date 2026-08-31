@@ -52,17 +52,19 @@ def test_load_config_success(tmp_path: Path):
         "DISCORD_TOKEN=my_bot_token\n"
         f"DATABASE_PATH={tmp_path}/data/test.db\n"
         "LOG_LEVEL=warning\n"
+        "LOG_FILE=custom_bot.log\n"
         "RA_REGEX=^[A-Z0-9]{3,10}$\n"
         "DISCORD_GUILD_ID=123456789\n",
         encoding="utf-8",
     )
-    for key in ["DISCORD_TOKEN", "DATABASE_PATH", "LOG_LEVEL", "RA_REGEX", "DISCORD_GUILD_ID"]:
+    for key in ["DISCORD_TOKEN", "DATABASE_PATH", "LOG_LEVEL", "LOG_FILE", "RA_REGEX", "DISCORD_GUILD_ID"]:
         os.environ.pop(key, None)
 
     cfg = load_config(require_token=True, env_file=env_file)
     assert cfg.discord_token == "my_bot_token"
     assert cfg.database_path == (tmp_path / "data" / "test.db").resolve()
     assert cfg.log_level == "WARNING"
+    assert cfg.log_file == Path("custom_bot.log").resolve()
     assert cfg.ra_regex_str == "^[A-Z0-9]{3,10}$"
     assert cfg.ra_regex.match("ABC123")
     assert cfg.discord_guild_id == 123456789

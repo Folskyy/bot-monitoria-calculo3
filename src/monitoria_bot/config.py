@@ -37,6 +37,7 @@ class Config:
     discord_token: str
     database_path: Path
     log_level: str
+    log_file: Path | None
     ra_regex: re.Pattern[str]
     ra_regex_str: str
     discord_guild_id: int | None
@@ -58,6 +59,9 @@ def load_config(require_token: bool = True, env_file: str | Path = ".env") -> Co
     if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
         log_level = "INFO"
 
+    log_file_raw = os.getenv("LOG_FILE", "bot.log").strip()
+    log_file: Path | None = Path(log_file_raw).expanduser().resolve() if log_file_raw else None
+
     ra_regex_str = os.getenv("RA_REGEX", r"^[A-Za-z0-9]{1,32}$").strip()
     try:
         ra_regex = re.compile(ra_regex_str)
@@ -78,6 +82,7 @@ def load_config(require_token: bool = True, env_file: str | Path = ".env") -> Co
         discord_token=token,
         database_path=db_path,
         log_level=log_level,
+        log_file=log_file,
         ra_regex=ra_regex,
         ra_regex_str=ra_regex_str,
         discord_guild_id=guild_id,
