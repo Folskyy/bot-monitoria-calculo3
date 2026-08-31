@@ -72,7 +72,7 @@ async def test_horarios_definir_permission_and_update(test_db: Database, mock_co
     msg = interaction_student.response.send_message.call_args[0][0]
     assert "Permissão negada" in msg
 
-    # 2. Monitor altera
+    # 2. Monitor altera com \n literal
     interaction_monitor = MagicMock(spec=discord.Interaction)
     interaction_monitor.guild = MagicMock(spec=discord.Guild)
     interaction_monitor.guild.id = 10
@@ -81,7 +81,29 @@ async def test_horarios_definir_permission_and_update(test_db: Database, mock_co
     interaction_monitor.user = monitor_member
     interaction_monitor.response = AsyncMock()
 
-    await cog.horarios_definir.callback(cog, interaction_monitor, texto="Sexta das 10h às 12h")
+    await cog.horarios_definir.callback(cog, interaction_monitor, texto=r"Sexta\n- 10h às 12h")
     settings = await test_db.get_guild_settings("10")
     assert settings is not None
-    assert settings.office_hours_text == "Sexta das 10h às 12h"
+    assert settings.office_hours_text == "Sexta\n- 10h às 12h"
+
+    # 3. Monitor executa sem texto -> envia Modal
+    interaction_modal = MagicMock(spec=discord.Interaction)
+    interaction_modal.guild = MagicMock(spec=discord.Guild)
+    interaction_modal.guild.id = 10
+    interaction_modal.user = monitor_member
+    interaction_modal.response = AsyncMock()
+
+    await cog.horarios_definir.callback(cog, interaction_modal, texto=None)
+    interaction_modal.response.send_modal.assert_called_once()
+    modal = interaction_modal.response.send_modal.call_args[0][0]
+    assert modal.texto.default == "Sexta\n- 10h às 12h"
+
+    # 4. Envio do Modal
+    interaction_submit = MagicMock(spec=discord.Interaction)
+    interaction_submit.response = AsyncMock()
+    modal.texto._value = "Quarta\n- 15h às 18h"
+    await modal.on_submit(interaction_submit)
+    settings_updated = await test_db.get_guild_settings("10")
+    assert settings_updated is not None
+    assert settings_updated.office_hours_text == "Quarta\n- 15h às 18h"
+

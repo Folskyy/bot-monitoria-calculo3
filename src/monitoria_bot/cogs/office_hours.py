@@ -14,6 +14,32 @@ from monitoria_bot.database import Database
 logger = logging.getLogger(__name__)
 
 
+class OfficeHoursModal(discord.ui.Modal, title="Horários da Monitoria"):
+    """Modal interativo de texto multi-linha para definir horários de monitoria."""
+
+    texto = discord.ui.TextInput(
+        label="Texto dos Horários",
+        style=discord.TextStyle.paragraph,
+        placeholder="Cole ou digite os horários aqui (aceita quebras de linha e Markdown)...",
+        required=True,
+        max_length=2000,
+    )
+
+    def __init__(self, db: Database, guild_id: str, default_value: str = "") -> None:
+        super().__init__()
+        self.db = db
+        self.guild_id = guild_id
+        if default_value:
+            self.texto.default = default_value
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        await self.db.update_office_hours_text(self.guild_id, self.texto.value.strip())
+        await interaction.response.send_message(
+            "✅ Horários de monitoria atualizados com sucesso!",
+            ephemeral=True,
+        )
+
+
 class OfficeHoursCog(commands.Cog, name="Horários"):
     """Comandos para consulta e atualização dos horários de atendimento."""
 
@@ -51,8 +77,8 @@ class OfficeHoursCog(commands.Cog, name="Horários"):
         name="horarios-definir",
         description="Atualiza o texto dos horários de atendimento (Apenas Monitores e Administradores).",
     )
-    @app_commands.describe(texto="Texto contendo os dias, horários e informações das sessões de monitoria.")
-    async def horarios_definir(self, interaction: discord.Interaction, texto: str) -> None:
+    @app_commands.describe(texto="Texto dos horários (opcional; se omitido, abre formulário). Use \\n para quebra de linha.")
+    async def horarios_definir(self, interaction: discord.Interaction, texto: str | None = None) -> None:
         if not is_guild_interaction(interaction):
             await interaction.response.send_message("Comando restrito a servidores.", ephemeral=True)
             return
@@ -68,7 +94,14 @@ class OfficeHoursCog(commands.Cog, name="Horários"):
             )
             return
 
-        await self.db.update_office_hours_text(guild_id, texto.strip())
+        if texto is None or not texto.strip():
+            default_val = settings.office_hours_text if settings else ""
+            modal = OfficeHoursModal(self.db, guild_id, default_value=default_val)
+            await interaction.response.send_modal(modal)
+            return
+
+        formatted_text = texto.replace(r"\n", "\n").strip()
+        await self.db.update_office_hours_text(guild_id, formatted_text)
         await interaction.response.send_message(
             "✅ Horários de monitoria atualizados com sucesso!",
             ephemeral=True,
