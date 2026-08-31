@@ -100,6 +100,25 @@ Repositório de links para materiais de apoio.
 - `materials`: `(id, guild_id, title, description, url, created_by_user_id, created_at)`
 - `material_tags`: `(material_id, tag) PRIMARY KEY` com `ON DELETE CASCADE` e índice em `tag`.
 
+### 2.6. `classes`
+Armazena as opções de turmas/cursos para seleção no formulário de cadastro.
+
+| Coluna | Tipo | Descrição |
+| :--- | :--- | :--- |
+| `id` | `INTEGER PRIMARY KEY AUTOINCREMENT` | Identificador sequencial da turma. |
+| `guild_id` | `TEXT NOT NULL` | ID do servidor (FK -> `guild_settings`). |
+| `name` | `TEXT NOT NULL` | Nome da turma ou curso (1 a 80 caracteres). |
+| `created_at` | `TEXT NOT NULL` | Timestamp UTC de criação. |
+
+**Valores Padrão:**
+Na primeira inicialização por guilda, são salvas as seguintes turmas padrão no banco de dados:
+- Engenharia de Computação
+- Engenharia Civil
+- Engenharia Eletrônica
+
+Caso a opção "Outro" seja selecionada e um novo nome informado, uma nova linha é criada dinamicamente na tabela `classes`.
+
+
 ---
 
 ## 3. Máquinas de Estado e Reconciliação

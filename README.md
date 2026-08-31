@@ -13,7 +13,8 @@ O bot permite gerenciar o atendimento síncrono e assíncrono entre alunos e a e
 ## 📌 Funcionalidades do MVP
 
 - **Configuração Segura (`/configurar`):** Parametrização dinâmica de canais e cargos pelo administrador com validação rigorosa de permissões perigosas no cargo Aluno e conferência da hierarquia do bot.
-- **Boas-vindas e Cadastro Efêmero (`/boas-vindas`, `/cadastro`):** Mensagem fixa com botão persistente que abre formulário privado (Modal) para coleta de Nome, RA e Turma. Atribui o cargo Aluno automaticamente sem expor dados em chats públicos.
+- **Boas-vindas e Cadastro Efêmero (`/boas-vindas`, `/cadastro`):** Mensagem fixa com botão persistente que abre formulário privado (Modal) para coleta de Nome, RA e Turma (com seleção de opções padrão no banco de dados: Engenharia de Computação, Engenharia Civil, Engenharia Eletrônica e opção "Outro"). Atribui o cargo Aluno automaticamente sem expor dados em chats públicos.
+
 - **Preservação e Validação de RA:** O RA é armazenado como texto, preservando zeros à esquerda (ex: `0012345`) com validação configurável por regex (`RA_REGEX`).
 - **Dúvidas em Tópicos (`/duvida criar`, `/duvida minhas`, `/duvida resolver`):** Criação de mensagens com threads públicas associadas para cada dúvida, suportando anexos de imagens sem necessidade de download local ou OCR.
 - **Fila FIFO de Atendimento (`/fila`):** Fila sequencial com controle de concorrência atômico (proteção contra chamadas simultâneas duplicadas), suporte a saída voluntária e limpeza administrativa.

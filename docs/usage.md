@@ -39,7 +39,8 @@ Este guia descreve os fluxos de trabalho para **Alunos**, **Monitores** e **Admi
 3. Um modal privado é aberto:
    - **Nome Completo:** Digite seu nome oficial.
    - **RA:** Digite seu RA (zeros à esquerda são aceitos e mantidos, ex: `0012345`).
-   - **Turma:** Opcional.
+   - **Turma/Curso:** Selecione a sua turma entre as opções do banco de dados (ex: *Engenharia de Computação*, *Engenharia Civil*, *Engenharia Eletrônica* ou *Outro*). Caso selecione *Outro*, informe a turma no campo de texto complementar (que criará uma nova opção no banco).
+
 4. O bot registra os dados, atribui o cargo **Aluno** e responde de forma privada confirmando a liberação dos canais.
 5. Caso o Discord falhe momentaneamente ao atribuir o cargo (ex: problema de rede ou permissão), o cadastro é salvo no estado `pending_role`. O aluno pode simplesmente clicar novamente no botão para concluir a atribuição assim que o problema for corrigido.
 
