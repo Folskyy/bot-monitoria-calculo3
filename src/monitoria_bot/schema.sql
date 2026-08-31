@@ -100,3 +100,15 @@ CREATE TABLE IF NOT EXISTS material_tags (
 );
 
 CREATE INDEX IF NOT EXISTS idx_material_tags_tag ON material_tags (tag);
+
+CREATE TABLE IF NOT EXISTS classes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id TEXT NOT NULL,
+    name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 80),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+    UNIQUE (guild_id, name),
+    FOREIGN KEY (guild_id) REFERENCES guild_settings(guild_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_classes_guild ON classes (guild_id);
+

@@ -257,3 +257,35 @@ async def test_materials_and_tag_search(test_db: Database):
     assert await test_db.delete_material("g1", mat1.id) is True
     assert await test_db.get_material("g1", mat1.id) is None
     assert len(await test_db.search_materials("g1", tag="teoria")) == 0
+
+
+async def test_get_classes_defaults_and_custom(test_db: Database):
+    await test_db.upsert_guild_settings("g1", "1", "2", "3", "4", "5")
+
+    # Primeira busca gera as turmas padrão
+    classes = await test_db.get_classes("g1")
+    class_names = [c.name for c in classes]
+    assert "Engenharia de Computação" in class_names
+    assert "Engenharia Civil" in class_names
+    assert "Engenharia Eletrônica" in class_names
+    assert len(classes) == 3
+
+    # Adicionar turma personalizada
+    added = await test_db.add_class("g1", "Engenharia Mecânica")
+    assert added.name == "Engenharia Mecânica"
+
+    # Segunda busca deve conter a nova turma
+    updated_classes = await test_db.get_classes("g1")
+    assert len(updated_classes) == 4
+    assert any(c.name == "Engenharia Mecânica" for c in updated_classes)
+
+
+async def test_add_class_deduplication(test_db: Database):
+    await test_db.upsert_guild_settings("g1", "1", "2", "3", "4", "5")
+
+    c1 = await test_db.add_class("g1", "Engenharia Química")
+    c2 = await test_db.add_class("g1", "engenharia química")
+
+    assert c1.id == c2.id
+    assert c1.name == "Engenharia Química"
+

@@ -89,6 +89,21 @@ class Material:
     tags: list[str]
 
 
+DEFAULT_CLASSES = [
+    "Engenharia de Computação",
+    "Engenharia Civil",
+    "Engenharia Eletrônica",
+]
+
+
+@dataclass(frozen=True)
+class ClassOption:
+    id: int
+    guild_id: str
+    name: str
+    created_at: str
+
+
 class Database:
     """Gerenciador assíncrono do banco SQLite local com lock de concorrência."""
 
@@ -133,6 +148,11 @@ class Database:
                 await self._conn.executescript(schema_text)
                 await self._conn.execute("PRAGMA user_version = 1;")
                 await self._conn.commit()
+            else:
+                schema_text = importlib.resources.files("monitoria_bot").joinpath("schema.sql").read_text(encoding="utf-8")
+                await self._conn.executescript(schema_text)
+                await self._conn.commit()
+
 
     # -------------------------------------------------------------------------
     # Guild Settings
@@ -787,3 +807,56 @@ class Database:
             results.append(Material(**d))
 
         return results
+
+    # -------------------------------------------------------------------------
+    # Classes / Turmas
+    # -------------------------------------------------------------------------
+
+    async def get_classes(self, guild_id: str) -> list[ClassOption]:
+        """Retorna as opções de turmas cadastradas para a guilda. Se não houver nenhuma, popula os valores padrão."""
+        await self.connect()
+        assert self._conn is not None
+
+        async with self._lock:
+            query = "SELECT id, guild_id, name, created_at FROM classes WHERE guild_id = ? ORDER BY id ASC;"
+            async with self._conn.execute(query, (guild_id,)) as cursor:
+                rows = await cursor.fetchall()
+
+            if not rows:
+                now = utc_iso_now()
+                for default_name in DEFAULT_CLASSES:
+                    await self._conn.execute(
+                        "INSERT OR IGNORE INTO classes (guild_id, name, created_at) VALUES (?, ?, ?);",
+                        (guild_id, default_name, now),
+                    )
+                await self._conn.commit()
+
+                async with self._conn.execute(query, (guild_id,)) as cursor:
+                    rows = await cursor.fetchall()
+
+            return [ClassOption(**dict(r)) for r in rows]
+
+    async def add_class(self, guild_id: str, name: str) -> ClassOption:
+        """Adiciona uma nova turma para a guilda se ainda não existir e a retorna."""
+        await self.connect()
+        assert self._conn is not None
+        clean_name = name.strip()
+        now = utc_iso_now()
+
+        async with self._lock:
+            query_select = "SELECT id, guild_id, name, created_at FROM classes WHERE guild_id = ? AND LOWER(name) = LOWER(?);"
+            async with self._conn.execute(query_select, (guild_id, clean_name)) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    return ClassOption(**dict(row))
+
+            query_insert = "INSERT INTO classes (guild_id, name, created_at) VALUES (?, ?, ?);"
+            async with self._conn.execute(query_insert, (guild_id, clean_name, now)) as cursor:
+                class_id = cursor.lastrowid
+            await self._conn.commit()
+
+        async with self._conn.execute("SELECT id, guild_id, name, created_at FROM classes WHERE id = ?;", (class_id,)) as cursor:
+            row = await cursor.fetchone()
+            assert row is not None
+            return ClassOption(**dict(row))
+
