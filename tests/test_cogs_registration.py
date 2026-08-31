@@ -103,3 +103,26 @@ async def test_ajuda_command(test_db: Database, mock_config: Config, mock_bot: c
     kwargs = interaction.response.send_message.call_args[1]
     assert kwargs.get("ephemeral") is True
     assert "Central de Ajuda" in kwargs.get("embed").title
+
+
+async def test_aluno_editar_opens_modal_for_monitor(test_db: Database, mock_config: Config, mock_bot: commands.Bot):
+    cog = RegistrationCog(mock_bot, test_db, mock_config)
+    await test_db.upsert_guild_settings("10", "1", "2", "3", "4", "5")
+    await test_db.create_pending_student("10", "123", "Aluno Teste", "RA123", "Engenharia Civil")
+
+    interaction = MagicMock(spec=discord.Interaction)
+    interaction.guild = MagicMock(spec=discord.Guild)
+    interaction.guild.id = 10
+    member = MagicMock(spec=discord.Member)
+    member.id = 99
+    member.guild_permissions.administrator = True
+    interaction.user = member
+    interaction.response = AsyncMock()
+
+    target_student = MagicMock(spec=discord.Member)
+    target_student.id = 123
+    target_student.guild = interaction.guild
+
+    await cog.aluno_editar.callback(cog, interaction, aluno=target_student)
+    interaction.response.send_modal.assert_awaited_once()
+
