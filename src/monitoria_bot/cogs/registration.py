@@ -51,11 +51,13 @@ class RegistrationCog(commands.Cog, name="Cadastro"):
 
         student = await self.db.get_student(guild_id, user_id)
         if not student:
-            modal = RegistrationModal(self.db, self.config, settings)
+            classes = await self.db.get_classes(guild_id)
+            modal = RegistrationModal(self.db, self.config, settings, classes=classes)
             await interaction.response.send_modal(modal)
             return
 
         student_role = interaction.guild.get_role(int(settings.student_role_id))
+
 
         if student.status == "active":
             has_role = any(str(r.id) == settings.student_role_id for r in interaction.user.roles)
@@ -171,8 +173,10 @@ class RegistrationCog(commands.Cog, name="Cadastro"):
             )
             return
 
-        modal = EditStudentModal(self.db, self.config, aluno, student)
+        classes = await self.db.get_classes(guild_id)
+        modal = EditStudentModal(self.db, self.config, aluno, student, classes=classes)
         await interaction.response.send_modal(modal)
+
 
     @app_commands.command(
         name="ajuda",
